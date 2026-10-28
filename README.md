@@ -1,127 +1,95 @@
 # LinkedIn Icebreaker Bot
 
-An AI-powered tool that generates personalized icebreakers and conversation starters based on LinkedIn profiles. This project uses IBM watsonx.ai and LlamaIndex to create a tool that helps make introductions more personal and engaging.
+A Retrieval Augmented Generation (RAG) app that reads a LinkedIn profile, suggests three interesting facts to start a conversation with, and answers follow up questions about the person's career and education.
 
-## Project Overview
+Built with **LlamaIndex**, **IBM watsonx.ai** (Granite embeddings plus Granite, Llama 4, and Mistral LLMs), and **Gradio**.
 
-Imagine you're heading to a big networking event, surrounded by potential employers and industry leaders. You want to make a great first impression, but you're struggling to come up with more than the usual, "What do you do?"
+## What it does
 
-This AI icebreaker bot does the research for you. You input a name, and within seconds, the bot searches LinkedIn, generating personalized icebreakers based on someone's career highlights, interests, and even fun facts.
+1. Loads a LinkedIn profile (sample JSON data)
+2. Splits the profile into chunks and embeds them with IBM Granite
+3. Stores the embeddings in a LlamaIndex vector index
+4. Generates three icebreaker facts about the person
+5. Lets you chat with the profile, answering only from the retrieved context (and saying "I don't know" when the answer isn't there)
 
-## Features
+You can use it from the terminal or through a web interface.
 
-- Extract LinkedIn profile data using ProxyCurl API or mock data
-- Process and index the data using LlamaIndex and IBM watsonx embeddings
-- Generate interesting facts about a person's career or education
-- Answer specific questions about the LinkedIn profile
-- Interact with the bot through a command-line interface or a Gradio web UI
+## How it works
 
-## Project Structure
-
-```
-icebreaker_bot/
-├── requirements.txt           # Dependencies
-├── config.py                  # Configuration settings
-├── modules/
-│   ├── __init__.py
-│   ├── data_extraction.py     # LinkedIn profile data extraction
-│   ├── data_processing.py     # Data splitting and indexing
-│   ├── llm_interface.py       # LLM setup and interaction
-│   └── query_engine.py        # Query processing and response generation
-├── app.py                     # Gradio interface
-└── main.py                    # Main script to run without Gradio
+```mermaid
+flowchart LR
+    A[Profile data<br/>JSON] --> B[SentenceSplitter<br/>nodes]
+    B --> C[Granite embeddings]
+    C --> D[VectorStoreIndex]
+    Q[User question] --> E[Retriever<br/>top k nodes]
+    D --> E
+    E --> F[Prompt template<br/>context + question]
+    F --> G[watsonx LLM]
+    G --> H[Answer]
 ```
 
-## Getting Started
+| RAG step | Where it happens |
+|---|---|
+| Load | `modules/data_extraction.py` |
+| Split and index | `modules/data_processing.py` |
+| Embedding model and LLM setup | `modules/llm_interface.py` |
+| Retrieve, augment, generate | `modules/query_engine.py` |
+| Terminal app | `main.py` |
+| Web app (Gradio) | `app.py` |
+| Settings and prompt templates | `config.py` |
 
-### Prerequisites
+## Tech stack
 
-- Python 3.11+
-- A ProxyCurl API key (optional - you can use mock data)
+* Python 3.11
+* LlamaIndex (`Document`, `SentenceSplitter`, `VectorStoreIndex`, query engines, custom prompt templates)
+* IBM watsonx.ai: `granite-embedding-278m-multilingual` for embeddings; `granite-4-h-small`, `llama-4-maverick`, and `mistral-small-3-1` for generation
+* Gradio (`gr.Blocks`, tabs, chatbot component)
 
-### Installation
+## Getting started
 
-1. Clone the repository:
 ```bash
-git clone https://github.com/HaileyTQuach/icebreaker.git
-cd icebreaker
-```
-
-2. Create a virtual environment:
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-3. Install dependencies:
-```bash
+git clone https://github.com/sabasgh/linkedin-icebreaker-bot.git
+cd linkedin-icebreaker-bot
+python3.11 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-4. Add your ProxyCurl API key to `config.py` (optional)
+**Credentials:** the project was built in the IBM Skills Network lab, which provides watsonx access. To run it elsewhere, you need your own IBM watsonx.ai account: set the `WATSONX_APIKEY` environment variable and update `WATSONX_URL` and `WATSONX_PROJECT_ID` in `config.py`.
 
-### Usage
-
-#### Command Line Interface
-
-Run the bot using the command line:
+### Terminal version
 
 ```bash
-python main.py --mock  # Use mock data
-# OR
-python main.py --url "https://www.linkedin.com/in/username/" --api-key "your-api-key"
+python main.py --mock                 # use the sample profile
+python main.py --mock --model meta-llama/llama-4-maverick-17b-128e-instruct-fp8
 ```
 
-#### Web Interface
+Type `exit` to quit the chat.
 
-Launch the Gradio web interface:
+### Web version
 
 ```bash
 python app.py
 ```
 
-Then open your browser to the URL shown in the terminal (typically http://127.0.0.1:7860).
+Open `http://localhost:7860`, click **Process Profile**, then ask questions in the **Chat** tab.
 
-## Development Tasks
+## What I changed from the original lab
 
-This is a starter template with placeholder functions. Your task is to implement the following components:
+This started as a guided project in the IBM RAG and Agentic AI Professional Certificate. Along the way I:
 
-1. In `config.py`:
-   - Define the prompt templates for facts generation and question answering
+* **Updated the model list** after the original models were deprecated or blocked in the environment (`llama-3-2-11b-vision`, `mistral-medium`), switching to models that are currently supported
+* **Improved error logging** so failed queries print a full traceback instead of a one line message
+* **Debugged and repaired** module code that broke during setup (merged lines, missing `__name__`, indentation errors)
 
-2. In `modules/data_extraction.py`:
-   - Implement the `extract_linkedin_profile` function
+## Ideas for next steps
 
-3. In `modules/data_processing.py`:
-   - Implement the `split_profile_data` function
-   - Implement the `create_vector_database` function
-   - Implement the `verify_embeddings` function
+* Load real profiles from a LinkedIn "Save to PDF" export, since the ProxyCurl API the lab used has been discontinued
+* Index the profile once and reuse it, instead of retrieving twice per question
+* Raise `truncate_input_tokens` above 3 so embeddings use more of each chunk
+* Move from the deprecated `/text/generation` endpoint to watsonx's `/text/chat` API
+* Add expiry for chat sessions so memory doesn't grow forever
 
-4. In `modules/llm_interface.py`:
-   - Implement the `create_watsonx_embedding` function
-   - Implement the `create_watsonx_llm` function
-   - Implement the `change_llm_model` function
+## Credits
 
-5. In `modules/query_engine.py`:
-   - Implement the `generate_initial_facts` function
-   - Implement the `answer_user_query` function
-
-6. Update `modules/__init__.py` to import your implemented functions
-
-7. In `main.py`:
-   - Implement the `process_linkedin` function
-   - Implement the `chatbot_interface` function
-
-8. In `app.py`:
-   - Implement the `process_profile` function
-   - Implement the `chat_with_profile` function
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Acknowledgments
-
-- IBM watsonx.ai for providing the LLM and embedding models
-- LlamaIndex for the data indexing and retrieval framework
-- ProxyCurl for LinkedIn profile data extraction
+Based on a project from the [IBM RAG and Agentic AI Professional Certificate](https://www.coursera.org/professional-certificates/ibm-rag-and-agentic-ai) on Coursera, extended and maintained by [Saba Soghrati](https://github.com/sabasgh).
