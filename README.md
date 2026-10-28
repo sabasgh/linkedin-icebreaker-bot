@@ -4,6 +4,8 @@ A Retrieval Augmented Generation (RAG) app that reads a LinkedIn profile, sugges
 
 Built with **LlamaIndex**, **IBM watsonx.ai** (Granite embeddings plus Granite and Mistral LLMs), and **Gradio**.
 
+![Icebreaker Bot demo](images/demo.gif)
+
 ## What it does
 
 1. Loads a LinkedIn profile (mock JSON data)
