@@ -2,11 +2,11 @@
 
 A Retrieval Augmented Generation (RAG) app that reads a LinkedIn profile, suggests three interesting facts to start a conversation with, and answers follow up questions about the person's career and education.
 
-Built with **LlamaIndex**, **IBM watsonx.ai** (Granite embeddings plus Granite, Llama 4, and Mistral LLMs), and **Gradio**.
+Built with **LlamaIndex**, **IBM watsonx.ai** (Granite embeddings plus Granite and Mistral LLMs), and **Gradio**.
 
 ## What it does
 
-1. Loads a LinkedIn profile (sample JSON data)
+1. Loads a LinkedIn profile (mock JSON data)
 2. Splits the profile into chunks and embeds them with IBM Granite
 3. Stores the embeddings in a LlamaIndex vector index
 4. Generates three icebreaker facts about the person
@@ -14,11 +14,13 @@ Built with **LlamaIndex**, **IBM watsonx.ai** (Granite embeddings plus Granite, 
 
 You can use it from the terminal or through a web interface.
 
+> **Note:** the app currently runs on **mock data**: a sample public LinkedIn profile stored as JSON and provided by the IBM lab. It does not fetch live data from LinkedIn. The ProxyCurl API that the original lab used for live profiles has been discontinued.
+
 ## How it works
 
 ```mermaid
 flowchart LR
-    A[Profile data<br/>JSON] --> B[SentenceSplitter<br/>nodes]
+    A[Mock profile data<br/>JSON] --> B[SentenceSplitter<br/>nodes]
     B --> C[Granite embeddings]
     C --> D[VectorStoreIndex]
     Q[User question] --> E[Retriever<br/>top k nodes]
@@ -42,7 +44,7 @@ flowchart LR
 
 * Python 3.11
 * LlamaIndex (`Document`, `SentenceSplitter`, `VectorStoreIndex`, query engines, custom prompt templates)
-* IBM watsonx.ai: `granite-embedding-278m-multilingual` for embeddings; `granite-4-h-small`, `llama-4-maverick`, and `mistral-small-3-1` for generation
+* IBM watsonx.ai: `granite-embedding-278m-multilingual` for embeddings; `granite-4-h-small` and `mistral-small-3-1` for generation
 * Gradio (`gr.Blocks`, tabs, chatbot component)
 
 ## Getting started
@@ -60,8 +62,8 @@ pip install -r requirements.txt
 ### Terminal version
 
 ```bash
-python main.py --mock                 # use the sample profile
-python main.py --mock --model meta-llama/llama-4-maverick-17b-128e-instruct-fp8
+python main.py --mock    # use the mock profile
+python main.py --mock --model mistralai/mistral-small-3-1-24b-instruct-2503
 ```
 
 Type `exit` to quit the chat.
@@ -72,7 +74,7 @@ Type `exit` to quit the chat.
 python app.py
 ```
 
-Open `http://localhost:7860`, click **Process Profile**, then ask questions in the **Chat** tab.
+Open `http://localhost:7860`, keep **Use Mock Data** checked, click **Process Profile**, then ask questions in the **Chat** tab.
 
 ## What I changed from the original lab
 
